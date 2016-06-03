@@ -1,6 +1,6 @@
 // diploma_core.cpp: определяет точку входа для консольного приложения.
 //
-
+//test
 #include <stdlib.h>
 #include <math.h>
 #include <GL/glew.h>
@@ -227,7 +227,7 @@ void loadImageData(int argc, char **argv)
 		fprintf(stderr, "Error finding image file '%s'\n", image_filename);
 		exit(EXIT_FAILURE);
 	}
-	sdkLoadPPM4(image_path, (float**)&pImg, &width, &height);
+	sdkLoadPPM4(image_path, (uchar**)&pImg, &width, &height);
 	//LoadBMPFile((uchar4 **)&pImg, &width, &height, image_path);
 
 	if (pImg == NULL)
