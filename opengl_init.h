@@ -1,5 +1,6 @@
 #ifndef OPENGL_INIT_H_
 #define OPENGL_INIT_H_
+#endif
 
 #include <GL\glew.h>
 #include <GL\freeglut.h>
