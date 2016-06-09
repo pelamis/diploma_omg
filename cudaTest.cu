@@ -65,7 +65,7 @@ void rotTex(uint *dDest, int width, int height, int deg)
     rotKernel<<< gridSize, blockSize>>>(dDest, width, height, deg);
 
     checkCudaErrors(cudaDeviceSynchronize());
-    
+                                                                                      
     checkCudaErrors(cudaMemcpy2D(dTemp, pitch, dDest, sizeof(int)*width, sizeof(int)*width, height, cudaMemcpyDeviceToDevice));
     checkCudaErrors(cudaBindTexture2D(0, rgbaTex, dTemp, desc, width, height, pitch));
     return;

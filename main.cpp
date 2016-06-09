@@ -19,7 +19,7 @@ const static char *sSDKsample = "CUDA Test";
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
-const char *image_filename = "peka.ppm";
+const char *image_filename = "test.bmp";
 int iterations = 1;
 float gaussian_delta = 4;
 float euclidean_delta = 0.1f;
@@ -227,8 +227,8 @@ void loadImageData(int argc, char **argv)
 		fprintf(stderr, "Error finding image file '%s'\n", image_filename);
 		exit(EXIT_FAILURE);
 	}
-	sdkLoadPPM4(image_path, (uchar**)&pImg, &width, &height);
-	//LoadBMPFile((uchar4 **)&pImg, &width, &height, image_path);
+	//sdkLoadPPM4(image_path, (uchar**)&pImg, &width, &height);
+	LoadBMPFile((uchar4 **)&pImg, &width, &height, image_path);
 
 	if (pImg == NULL)
 	{
