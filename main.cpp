@@ -66,7 +66,7 @@ void display()
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 
 
-	
+
 	glClear(GL_COLOR_BUFFER_BIT);
 
 
@@ -81,7 +81,7 @@ void display()
 
 	glBegin(GL_QUADS);
 	{
-			glTexCoord2f(0, 0);
+		glTexCoord2f(0, 0);
 		glVertex2f(0, 0);
 		glTexCoord2f(1, 0);
 		glVertex2f(1, 0);
@@ -93,7 +93,7 @@ void display()
 	glEnd();
 	glBindTexture(GL_TEXTURE_TYPE, 0);
 	glDisable(GL_FRAGMENT_PROGRAM_ARB);
-	
+
 	glutSwapBuffers();
 	glutReportErrors();
 
@@ -103,22 +103,22 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 {
 	switch (key)
 	{
-		case 27:
-			glutDestroyWindow(glutGetWindow());
-			return;
-			break;
-		case '+':
-		{
-			if (isAngleCorrect(A + 90)) A += 180;
-			else printf("Max angle reached\n");
-			break;
-		}
-		case '-':
-			if (isAngleCorrect(A - 90)) A -= 180;
-			else printf("Min angle reached\n");
-			break;
-		default:
-			break;
+	case 27:
+		glutDestroyWindow(glutGetWindow());
+		return;
+		break;
+	case '+':
+	{
+		if (isAngleCorrect(A + 90)) A += 180;
+		else printf("Max angle reached\n");
+		break;
+	}
+	case '-':
+		if (isAngleCorrect(A - 90)) A -= 180;
+		else printf("Min angle reached\n");
+		break;
+	default:
+		break;
 	}
 	printf_s("Deg: %d\n", A);
 	glutPostRedisplay();
@@ -221,7 +221,7 @@ void loadImageData(int argc, char **argv)
 	char *image_path = NULL;
 
 	image_path = sdkFindFilePath(image_filename, argv[0]);
-	
+
 	if (image_path == NULL)
 	{
 		fprintf(stderr, "Error finding image file '%s'\n", image_filename);
@@ -327,11 +327,12 @@ int main(int argc, char **argv)
 
 	initCuda();
 	initGLResources();
+	
 
 	glutCloseFunc(cleanup);
 
 	printf("Press '+' and '-' to change filter width\n");
 
 	glutMainLoop();
-	
+
 }
