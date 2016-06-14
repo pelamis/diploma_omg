@@ -109,12 +109,12 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 		break;
 	case '+':
 	{
-		if (isAngleCorrect(A + 180)) A += 180;
+		if (isAngleCorrect(A + 30)) A += 30;
 		else printf("Max angle reached\n");
 		break;
 	}
 	case '-':
-		if (isAngleCorrect(A - 180)) A -= 180;
+		if (isAngleCorrect(A - 30)) A -= 30;
 		else printf("Min angle reached\n");
 		break;
 	default:
