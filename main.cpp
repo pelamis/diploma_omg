@@ -61,7 +61,7 @@ void display()
 	size_t num_bytes;
 	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
 
-	if (A > 0) rotTex(dResult, width, height, A);
+	rotTex(dResult, width, height, A);
 
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 
@@ -109,12 +109,12 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 		break;
 	case '+':
 	{
-		if (isAngleCorrect(A + 90)) A += 180;
+		if (isAngleCorrect(A + 180)) A += 180;
 		else printf("Max angle reached\n");
 		break;
 	}
 	case '-':
-		if (isAngleCorrect(A - 90)) A -= 180;
+		if (isAngleCorrect(A - 180)) A -= 180;
 		else printf("Min angle reached\n");
 		break;
 	default:
