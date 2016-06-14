@@ -44,15 +44,15 @@ __global__ void rotKernel(uint *outputData,
 	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
 
-	//float u = x - (float)width / 2;
-	//float v = y - (float)height / 2;
-	//float tu = - v;
-	//float tv = u;
+	float u = x; //- (float)width / 2;
+	float v = y; //- (float)height / 2;
+	float tu = u;
+	float tv = v;
 
 	//tu /= (float)width;
 	//tv /= (float)height;
 
-	outputData[y*width + x] = rgbaFloatToInt(tex2D(rgbaTex, x, y));
+	outputData[y*width + x] = rgbaFloatToInt(tex2D(rgbaTex, tu+0.5f, tv+0.5f));
 }
 
 extern "C"
