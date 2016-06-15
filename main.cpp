@@ -20,30 +20,28 @@ typedef unsigned int uint;
 typedef unsigned char uchar;
 
 const char *image_filename = "test.bmp";
-int iterations = 1;
-float gaussian_delta = 4;
-float euclidean_delta = 0.1f;
-int filter_radius = 5;
+float2 transVec = { 0.0, 0.0 };
 
 unsigned int width, height;
 unsigned int  *pImg = NULL;
+unsigned int *dResult = NULL;
+float g = 1.0;
 
 GLuint pbo;     // OpenGL pixel buffer object
 struct cudaGraphicsResource *cuda_pbo_resource; // handles OpenGL-CUDA exchange
 GLuint texid;   // texture
 GLuint shader;
 
-//#define GL_TEXTURE_TYPE GL_TEXTURE_RECTANGLE_ARB
 #define GL_TEXTURE_TYPE GL_TEXTURE_2D
-
-extern "C" void loadImageData(int argc, char **argv);
-
 
 extern "C" void cdTexInit(int width, int height, void *pImage);
 extern "C" void cdTexFree();
 extern "C" void LoadBMPFile(uchar4 **dst, unsigned int *width,
 	unsigned int *height, const char *name);
-extern "C" void rotTex(uint* out, int w, int h, int deg);
+extern "C" void rotate(uint* out, int w, int h, int deg);
+extern "C" void translate(uint *dDest, int width, int height, float2 transVec);
+extern "C" void gamma(uint *dDest, int width, int height, float g);
+extern "C" void invert(uint *dDest, int width, int height);
 int A = 0;
 
 bool isAngleCorrect(uint angle)
@@ -55,15 +53,15 @@ void display()
 {
 
 
-	unsigned int *dResult;
+	//unsigned int *dResult;
 
-	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-	size_t num_bytes;
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+	//checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+	//size_t num_bytes;
+	//checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
 
-	if (A > 0) rotTex(dResult, width, height, A);
+	//rotTex(dResult, width, height, A);
 
-	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+	//checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 
 
 
@@ -104,23 +102,126 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	switch (key)
 	{
 	case 27:
+	{
 		glutDestroyWindow(glutGetWindow());
 		return;
 		break;
-	case '+':
+	}
+	case '`':
 	{
-		if (isAngleCorrect(A + 90)) A += 180;
-		else printf("Max angle reached\n");
+		//char *command = (char *)malloc(10 * sizeof(char));
+		//scanf_s("%s", command);
+		//printf_s("Command: %s", command);
 		break;
 	}
-	case '-':
-		if (isAngleCorrect(A - 90)) A -= 180;
-		else printf("Min angle reached\n");
+	case 'a':
+	{
+		if (isAngleCorrect(A + 30)) 
+		{ 
+			A += 30; 
+			checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+			size_t num_bytes;
+			checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+			rotate(dResult, width, height, A);
+			//translate(dResult, width, height, transVec);
+			checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+		}
+		else 
+		{ 
+			printf("Max angle reached\n");
+			A = 0;
+		}
+		printf_s("Deg: %d\n", A);
 		break;
+	}
+	case 'd':
+	{
+		if (isAngleCorrect(A - 30))
+		{
+			A -= 30;
+			checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+			size_t num_bytes;
+			checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+			rotate(dResult, width, height, A);
+			//translate(dResult, width, height, transVec);
+			checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+		}
+		else
+		{
+			printf("Min angle reached\n");
+			A = 360;
+		}
+		printf_s("Deg: %d\n", A);
+		break;
+	}
+	case 'i':
+	{
+		transVec.y += 1.0;
+		printf("Translation vector: (%f, %f)\n", transVec.x, transVec.y);
+		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		size_t num_bytes;
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+		translate(dResult, width, height, transVec);
+		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+		break;
+	}
+	case 'k':
+	{
+		transVec.y -= 1.0;
+		printf("Translation vector: (%f, %f)\n", transVec.x, transVec.y);
+		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		size_t num_bytes;
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+		translate(dResult, width, height, transVec);
+		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+		break;
+	}
+	case 'l':
+	{
+		transVec.x += 1.0;
+		printf("Translation vector: (%f, %f)\n", transVec.x, transVec.y);
+		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		size_t num_bytes;
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+		translate(dResult, width, height, transVec);
+		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+		break;
+	}
+	case 'j':
+	{
+		transVec.x -= 1.0;
+		printf("Translation vector: (%f, %f)\n", transVec.x, transVec.y);
+		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		size_t num_bytes;
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+		translate(dResult, width, height, transVec);
+		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+		break;
+	}
+	case 'g':
+	{
+		g = (g == 1.0) ? 2.0 : 1.0;
+		printf("Gamma: %f\n", g);
+		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		size_t num_bytes;
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+		gamma(dResult, width, height, g);
+		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+		break;
+	}
+	case 'v':
+	{
+		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		size_t num_bytes;
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+		invert(dResult, width, height);
+		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+		break;
+	}
+
 	default:
 		break;
 	}
-	printf_s("Deg: %d\n", A);
 	glutPostRedisplay();
 }
 
@@ -227,7 +328,7 @@ void loadImageData(int argc, char **argv)
 		fprintf(stderr, "Error finding image file '%s'\n", image_filename);
 		exit(EXIT_FAILURE);
 	}
-	//sdkLoadPPM4(image_path, (uchar**)&pImg, &width, &height);
+	
 	LoadBMPFile((uchar4 **)&pImg, &width, &height, image_path);
 
 	if (pImg == NULL)
@@ -330,8 +431,8 @@ int main(int argc, char **argv)
 	
 
 	glutCloseFunc(cleanup);
-
-	printf("Press '+' and '-' to change filter width\n");
+	printf("command mode on '`'\n");
+	printf("Rotate on angle theta: rot <theta>\nTranslate on [x, y]: tran <x, y>");
 
 	glutMainLoop();
 
