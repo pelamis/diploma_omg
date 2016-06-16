@@ -19,7 +19,7 @@ const static char *sSDKsample = "CUDA Test";
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
-const char *image_filename = "test.bmp";
+const char *image_filename = "peka.bmp";
 float2 transVec = { 0.0, 0.0 };
 
 unsigned int width, height;
@@ -434,8 +434,9 @@ int main(int argc, char **argv)
 
 	glutCloseFunc(cleanup);
 	printf("command mode on '`'\n");
-	printf("Rotate on angle theta: rot <theta>\nTranslate on [x, y]: tran <x, y>");
+	printf("Rotate on angle theta: rot <theta>\nTranslate on [x, y]: tran <x, y>\n");
 
 	glutMainLoop();
 
+	scanf_s("\n");
 }
