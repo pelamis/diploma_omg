@@ -34,13 +34,13 @@ __global__ void rotKernel(uint *outputData,
 	float u = x - (float)width / 2;
 	float v = y - (float)height / 2;
 
-	float tu = u * cosf(theta) - v * sinf(theta);
-	float tv = u * sinf(theta) + v * cosf(theta);
+	float tu = u * cosf(theta) - v * sinf(theta) + 0.5f;
+	float tv = u * sinf(theta) + v * cosf(theta) + 0.5f;
 
 	tu += (float)width / 2;
 	tv += (float)height / 2;
 
-	outputData[y*width + x] = rgbaFloatToInt(tex2D(rgbaTex, tu + 0.5f, tv + 0.5f));
+	outputData[y*width + x] = ((tu < width) && (tv < height) && (tu > 0) && (tv > 0)) ? rgbaFloatToInt(tex2D(rgbaTex, tu, tv)) : (uint)0;
 }
 
 __global__ void transKernel(uint *outputData, int width, int height, float2 transVec)
@@ -66,8 +66,9 @@ __global__ void invertKernel(uint *output, int width, int height)
 {
 	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
+	float k = 1;
 	float4 pixel = tex2D(rgbaTex, x + 0.5f, y + 0.5f);
-	float4 gCorrected = { 1.0 - pixel.x, 1.0 - pixel.y, 1.0 - pixel.z, 1.0 - pixel.w };
+	float4 gCorrected = { k - pixel.x, k - pixel.y, k - pixel.z, k - pixel.w };
 
 	output[y * width + x] = rgbaFloatToInt(gCorrected);
 }

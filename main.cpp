@@ -42,7 +42,9 @@ extern "C" void rotate(uint* out, int w, int h, int deg);
 extern "C" void translate(uint *dDest, int width, int height, float2 transVec);
 extern "C" void gamma(uint *dDest, int width, int height, float g);
 extern "C" void invert(uint *dDest, int width, int height);
+
 int A = 0;
+int stepA = 10;
 
 bool isAngleCorrect(uint angle)
 {
@@ -116,9 +118,9 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case 'a':
 	{
-		if (isAngleCorrect(A + 30)) 
+		if (isAngleCorrect(A + stepA)) 
 		{ 
-			A += 30; 
+			A += stepA; 
 			checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
 			size_t num_bytes;
 			checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
@@ -136,9 +138,9 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case 'd':
 	{
-		if (isAngleCorrect(A - 30))
+		if (isAngleCorrect(A - 10))
 		{
-			A -= 30;
+			A -= stepA;
 			checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
 			size_t num_bytes;
 			checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
