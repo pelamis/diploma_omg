@@ -10,6 +10,7 @@
 #include <helper_cuda.h>     
 #include <helper_cuda_gl.h>   
 #include <helper_functions.h>  // CUDA SDK Helper functions
+#include <vector>
 
 #define MIN_RUNTIME_VERSION 1000
 #define MIN_COMPUTE_VERSION 0x10
@@ -45,6 +46,8 @@ extern "C" void invert(uint *dDest, int width, int height);
 
 int A = 0;
 int stepA = 10;
+
+using namespace std;
 
 bool isAngleCorrect(uint angle)
 {
@@ -111,6 +114,15 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case '`':
 	{
+		cin.clear();
+		printf_s(":");
+		int curChar;
+		vector<int> command;
+		for (curChar = cin.get(); (curChar != ' ') && (curChar != '\n'); curChar = cin.get())
+		{
+			printf("%c", curChar);
+		}
+
 		//char *command = (char *)malloc(10 * sizeof(char));
 		//scanf_s("%s", command);
 		//printf_s("Command: %s", command);

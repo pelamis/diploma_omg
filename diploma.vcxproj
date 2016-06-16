@@ -110,12 +110,14 @@
     <ClCompile Include="C:\ProgramData\NVIDIA Corporation\CUDA Samples\v7.5\3_Imaging\bilateralFilter\bmploader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="opengl_init.cpp" />
+    <ClCompile Include="Shell.cpp" />
     <CudaCompile Include="cudaTest.cu">
       <FileType>CppCode</FileType>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opengl_init.h" />
+    <ClInclude Include="Shell.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="TODO.txt" />
