@@ -43,6 +43,7 @@ extern "C" void rotate(uint* out, int w, int h, int deg);
 extern "C" void translate(uint *dDest, int width, int height, float2 transVec);
 extern "C" void gamma(uint *dDest, int width, int height, float g);
 extern "C" void invert(uint *dDest, int width, int height);
+extern "C" void fetchTheCommand();
 
 int A = 0;
 int stepA = 10;
@@ -114,15 +115,7 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case '`':
 	{
-		cin.clear();
-		printf_s(":");
-		int curChar;
-		vector<int> command;
-		for (curChar = cin.get(); (curChar != ' ') && (curChar != '\n'); curChar = cin.get())
-		{
-			printf("%c", curChar);
-		}
-
+		fetchTheCommand();
 		//char *command = (char *)malloc(10 * sizeof(char));
 		//scanf_s("%s", command);
 		//printf_s("Command: %s", command);
@@ -214,7 +207,7 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case 'g':
 	{
-		g = (g == 1.0) ? 2.0 : 1.0;
+		g = (g == 1.0f) ? 2.0f : 1.0f;
 		printf("Gamma: %f\n", g);
 		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
 		size_t num_bytes;
@@ -430,7 +423,6 @@ int findCapableDevice(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	int devID;
 	char *ref_file = NULL;
 	printf("%s Starting...\n\n", argv[0]);
 

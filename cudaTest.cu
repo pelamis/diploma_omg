@@ -92,7 +92,7 @@ void afterKernelExec(uint *dDest, cudaChannelFormatDesc desc, int width, int hei
 extern "C"
 void rotate(uint *dDest, int width, int height, int deg)
 {
-	float theta = (float)M_PI * (float)deg / 180.0;
+	float theta = (float)M_PI * (float)deg / 180.0f;
 	//printf("Deg angle: %d\ncos: %f\nsin: %f", deg, cosf(theta), sinf(theta));
 
 	cudaChannelFormatDesc desc = beforeKernelExec(dDest, width, height);
