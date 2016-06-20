@@ -14,7 +14,7 @@
 
 #define MIN_RUNTIME_VERSION 1000
 #define MIN_COMPUTE_VERSION 0x10
-
+#define REFRESH 10
 const static char *sSDKsample = "CUDA Test";
 
 typedef unsigned int uint;
@@ -47,8 +47,19 @@ extern "C" void fetchTheCommand();
 
 int A = 0;
 int stepA = 10;
+bool animate = false;
 
 using namespace std;
+
+void applyTransformations()
+{
+	size_t num_bytes;
+	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+	rotate(dResult, width, height, A);
+	translate(dResult, width, height, transVec);
+	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+}
 
 bool isAngleCorrect(uint angle)
 {
@@ -59,17 +70,27 @@ void display()
 {
 
 
-	//unsigned int *dResult;
+	unsigned int *dResult;
 
 	//checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-	//size_t num_bytes;
+	size_t num_bytes;
 	//checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
 
 	//rotTex(dResult, width, height, A);
 
 	//checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 
+	if (animate) 
+	{
+		A = (A + 1) % 360;
+	}
 
+	//applyTransformations();
+	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+	rotate(dResult, width, height, A);
+	translate(dResult, width, height, transVec);
+	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -103,6 +124,15 @@ void display()
 
 }
 
+void timerEvent(int value)
+{
+	if (glutGetWindow())
+	{
+		glutPostRedisplay();
+		glutTimerFunc(REFRESH, timerEvent, 0);
+	}
+}
+
 void keyboard(unsigned char key, int /*x*/, int /*y*/)
 {
 	switch (key)
@@ -115,30 +145,53 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case '`':
 	{
-		fetchTheCommand();
+		//fetchTheCommand();
 		//char *command = (char *)malloc(10 * sizeof(char));
 		//scanf_s("%s", command);
 		//printf_s("Command: %s", command);
 		break;
 	}
+	case 'r':
+	{
+		//size_t num_bytes;
+		printf_s("Angle (deg): ");
+		scanf_s("%d", &A);
+		
+		//checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		//checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+		//rotate(dResult, width, height, rot_angle);
+		//checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+		break;
+	}
+	case 'c':
+	{
+		printf_s("Restoring to default...\n");
+		A = 0;
+		transVec.x = 0.0f;
+		transVec.y = 0.0f;
+		g = 1.0f;
+		break;
+	}
 	case 'a':
 	{
-		if (isAngleCorrect(A + stepA)) 
-		{ 
-			A += stepA; 
-			checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-			size_t num_bytes;
-			checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-			rotate(dResult, width, height, A);
-			//translate(dResult, width, height, transVec);
-			checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-		}
-		else 
-		{ 
-			printf("Max angle reached\n");
-			A = 0;
-		}
-		printf_s("Deg: %d\n", A);
+		animate = (animate) ? false : true;
+		//if (isAngleCorrect(A + stepA)) 
+		//{ 
+		//	A += stepA; 
+		//	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		//	size_t num_bytes;
+		//	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+		//	rotate(dResult, width, height, A);
+		//	//translate(dResult, width, height, transVec);
+		//	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+		//}
+		//else 
+		//{ 
+		//	printf("Max angle reached\n");
+		//	A = stepA;
+		//}
+		//printf_s("Deg: %d\n", A);
+		//break;
 		break;
 	}
 	case 'd':
@@ -156,7 +209,7 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 		else
 		{
 			printf("Min angle reached\n");
-			A = 360;
+			A = 360 - stepA;
 		}
 		printf_s("Deg: %d\n", A);
 		break;
@@ -218,6 +271,7 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case 'v':
 	{
+
 		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
 		size_t num_bytes;
 		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
@@ -319,6 +373,7 @@ void initGL(int argc, char **argv)
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 	glutReshapeFunc(reshape);
+	glutTimerFunc(REFRESH, timerEvent, 0);
 	glewInit();
 }
 
