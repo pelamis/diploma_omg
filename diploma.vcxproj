@@ -108,6 +108,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="C:\ProgramData\NVIDIA Corporation\CUDA Samples\v7.5\3_Imaging\bilateralFilter\bmploader.cpp" />
+    <ClCompile Include="callbacks.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="opengl_init.cpp" />
     <ClCompile Include="Shell.cpp" />
@@ -116,6 +117,9 @@
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="callbacks.h" />
+    <ClInclude Include="commons.h" />
+    <ClInclude Include="cudakernels.h" />
     <ClInclude Include="opengl_init.h" />
   </ItemGroup>
   <ItemGroup>

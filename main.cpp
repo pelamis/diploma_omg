@@ -1,6 +1,9 @@
 // diploma_core.cpp: определяет точку входа для консольного приложения.
 //
 //test
+//#include "commons.h"
+//#include "callbacks.h"
+//#include "cudakernels.h"
 #include <stdlib.h>
 #include <math.h>
 #include <GL/glew.h>
@@ -12,9 +15,10 @@
 #include <helper_functions.h>  // CUDA SDK Helper functions
 #include <vector>
 
+
 #define MIN_RUNTIME_VERSION 1000
 #define MIN_COMPUTE_VERSION 0x10
-#define REFRESH 10
+
 const static char *sSDKsample = "CUDA Test";
 
 typedef unsigned int uint;
@@ -30,24 +34,44 @@ float g = 1.0;
 
 GLuint pbo;     // OpenGL pixel buffer object
 struct cudaGraphicsResource *cuda_pbo_resource; // handles OpenGL-CUDA exchange
+
+GLuint vbo;
+struct cudaGraphicsResource *cuda_vbo_resource;
+void *dVBOBuf = NULL;
+
 GLuint texid;   // texture
 GLuint shader;
 
 #define GL_TEXTURE_TYPE GL_TEXTURE_2D
 
+#define REFRESH 10
+
+bool animate = false;
+
+int A = 0;
+int stepA = 10;
+
+void display();
+void timerEvent(int value);
+void keyboard(unsigned char key, int /*x*/, int /*y*/);
+void reshape(int x, int y);
+
+
 extern "C" void cdTexInit(int width, int height, void *pImage);
 extern "C" void cdTexFree();
-extern "C" void LoadBMPFile(uchar4 **dst, unsigned int *width,
-	unsigned int *height, const char *name);
+
 extern "C" void rotate(uint* out, int w, int h, int deg);
 extern "C" void translate(uint *dDest, int width, int height, float2 transVec);
 extern "C" void gamma(uint *dDest, int width, int height, float g);
 extern "C" void invert(uint *dDest, int width, int height);
+
+extern "C" void LoadBMPFile(uchar4 **dst, unsigned int *width,
+	unsigned int *height, const char *name);
+
 extern "C" void fetchTheCommand();
 
-int A = 0;
-int stepA = 10;
-bool animate = false;
+
+//bool animate = false;
 
 using namespace std;
 
@@ -66,63 +90,8 @@ bool isAngleCorrect(uint angle)
 	return ((0 <= angle) && (angle <= 360)) ? true : false;
 }
 
-void display()
-{
 
 
-	unsigned int *dResult;
-
-	//checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-	size_t num_bytes;
-	//checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-
-	//rotTex(dResult, width, height, A);
-
-	//checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-
-	if (animate) 
-	{
-		A = (A + 1) % 360;
-	}
-
-	//applyTransformations();
-	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-	rotate(dResult, width, height, A);
-	translate(dResult, width, height, transVec);
-	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-
-	glClear(GL_COLOR_BUFFER_BIT);
-
-
-	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
-
-	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, shader);
-	glEnable(GL_FRAGMENT_PROGRAM_ARB);
-	glDisable(GL_DEPTH_TEST);
-
-	glBegin(GL_QUADS);
-	{
-		glTexCoord2f(0, 0);
-		glVertex2f(0, 0);
-		glTexCoord2f(1, 0);
-		glVertex2f(1, 0);
-		glTexCoord2f(1, 1);
-		glVertex2f(1, 1);
-		glTexCoord2f(0, 1);
-		glVertex2f(0, 1);
-	}
-	glEnd();
-	glBindTexture(GL_TEXTURE_TYPE, 0);
-	glDisable(GL_FRAGMENT_PROGRAM_ARB);
-
-	glutSwapBuffers();
-	glutReportErrors();
-
-}
 
 void timerEvent(int value)
 {
@@ -131,6 +100,11 @@ void timerEvent(int value)
 		glutPostRedisplay();
 		glutTimerFunc(REFRESH, timerEvent, 0);
 	}
+}
+
+void skipGarbageInput()
+{
+	fseek(stdin, 0, SEEK_END);
 }
 
 void keyboard(unsigned char key, int /*x*/, int /*y*/)
@@ -145,22 +119,14 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case '`':
 	{
-		//fetchTheCommand();
-		//char *command = (char *)malloc(10 * sizeof(char));
-		//scanf_s("%s", command);
-		//printf_s("Command: %s", command);
 		break;
 	}
 	case 'r':
 	{
 		//size_t num_bytes;
+		skipGarbageInput();
 		printf_s("Angle (deg): ");
 		scanf_s("%d", &A);
-		
-		//checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-		//checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-		//rotate(dResult, width, height, rot_angle);
-		//checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 		break;
 	}
 	case 'c':
@@ -174,90 +140,54 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case 'a':
 	{
-		animate = (animate) ? false : true;
-		//if (isAngleCorrect(A + stepA)) 
-		//{ 
-		//	A += stepA; 
-		//	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-		//	size_t num_bytes;
-		//	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-		//	rotate(dResult, width, height, A);
-		//	//translate(dResult, width, height, transVec);
-		//	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-		//}
-		//else 
-		//{ 
-		//	printf("Max angle reached\n");
-		//	A = stepA;
-		//}
-		//printf_s("Deg: %d\n", A);
-		//break;
-		break;
-	}
-	case 'd':
-	{
-		if (isAngleCorrect(A - 10))
+		char rotDirection = 0x00;
+		skipGarbageInput();
+		if (!animate)
 		{
-			A -= stepA;
-			checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-			size_t num_bytes;
-			checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-			rotate(dResult, width, height, A);
-			//translate(dResult, width, height, transVec);
-			checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+			printf_s("Rotate direction: (l)eft / (r)ight: ");
+			scanf_s("%c", &rotDirection);
+			printf_s("\n");
+			switch (rotDirection)
+			{
+			case 'r':
+			{
+				stepA = -(int)abs(stepA);
+				break;
+			}
+			case 'l':
+			{
+				stepA = (int)abs(stepA);
+				break;
+			}
+			default:
+			{
+				printf_s("Wrong symbol: %c.\n Direction set to default (left).\n", rotDirection);
+				stepA = (int)abs(stepA);
+				break;
+			}
+			}
+
+			animate = true;
 		}
-		else
-		{
-			printf("Min angle reached\n");
-			A = 360 - stepA;
+		else {
+			printf_s("Animation stopped\n");
+			animate = false;
 		}
-		printf_s("Deg: %d\n", A);
 		break;
 	}
-	case 'i':
+	case 't':
 	{
-		transVec.y += 1.0;
-		printf("Translation vector: (%f, %f)\n", transVec.x, transVec.y);
-		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-		size_t num_bytes;
-		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-		translate(dResult, width, height, transVec);
-		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-		break;
-	}
-	case 'k':
-	{
-		transVec.y -= 1.0;
-		printf("Translation vector: (%f, %f)\n", transVec.x, transVec.y);
-		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-		size_t num_bytes;
-		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-		translate(dResult, width, height, transVec);
-		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-		break;
-	}
-	case 'l':
-	{
-		transVec.x += 1.0;
-		printf("Translation vector: (%f, %f)\n", transVec.x, transVec.y);
-		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-		size_t num_bytes;
-		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-		translate(dResult, width, height, transVec);
-		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-		break;
-	}
-	case 'j':
-	{
-		transVec.x -= 1.0;
-		printf("Translation vector: (%f, %f)\n", transVec.x, transVec.y);
-		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-		size_t num_bytes;
-		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-		translate(dResult, width, height, transVec);
-		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-		break;
-	}
+		skipGarbageInput();
+		printf_s("Translate vector: <x> <y>) (deg): ");
+		scanf_s("%f %f", &transVec.x, &transVec.y);
+		//checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		//size_t num_bytes;
+		//checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+		////rotate(dResult, width, height, A);
+		//translate(dResult, width, height, transVec);
+		//checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+
+
 	case 'g':
 	{
 		g = (g == 1.0f) ? 2.0f : 1.0f;
@@ -284,17 +214,73 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 		break;
 	}
 	glutPostRedisplay();
+	}
 }
 
 void reshape(int x, int y)
 {
+	int pcside;
+	pcside = (width>height ? width : height) * 2;
 	glViewport(0, 0, x, y);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
+	glOrtho(-1.0, 1.0, -1.0, 1.0, 0.0, 1.0);
 }
+
+void display()
+{
+
+
+	unsigned int *dResult;
+
+	size_t num_bytes;
+
+	if (animate)
+	{
+		A = (A + 1) % 360;
+	}
+
+	//applyTransformations();
+	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+	rotate(dResult, width, height, A);
+	//translate(dResult, width, height, transVec);
+	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+
+	glClear(GL_COLOR_BUFFER_BIT);
+
+
+	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
+	glBindTexture(GL_TEXTURE_2D, texid);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+
+	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, shader);
+	glEnable(GL_FRAGMENT_PROGRAM_ARB);
+	glDisable(GL_DEPTH_TEST);
+
+	glBegin(GL_QUADS);
+	{
+		glTexCoord2f(0, 0);
+		glVertex2f(-0.5, -0.5);
+		glTexCoord2f(1, 0);
+		glVertex2f(0.5, -0.5);
+		glTexCoord2f(1, 1);
+		glVertex2f(0.5, 0.5);
+		glTexCoord2f(0, 1);
+		glVertex2f(-0.5, 0.5);
+	}
+	glEnd();
+	glBindTexture(GL_TEXTURE_TYPE, 0);
+	glDisable(GL_FRAGMENT_PROGRAM_ARB);
+
+	glutSwapBuffers();
+	glutReportErrors();
+
+}
+
 
 void initCuda()
 {
