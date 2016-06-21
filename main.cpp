@@ -1,30 +1,13 @@
 // diploma_core.cpp: определяет точку входа для консольного приложения.
 //
 //test
-//#include "commons.h"
-//#include "callbacks.h"
+#include "callbacks.h"
+#include "opengl_init.h"
 //#include "cudakernels.h"
-#include <stdlib.h>
-#include <math.h>
-#include <GL/glew.h>
-#include <GL/freeglut.h>
-#include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
-#include <helper_cuda.h>     
-#include <helper_cuda_gl.h>   
-#include <helper_functions.h>  // CUDA SDK Helper functions
-#include <vector>
 
 
-#define MIN_RUNTIME_VERSION 1000
-#define MIN_COMPUTE_VERSION 0x10
+const char *image_filename = "test.bmp";
 
-const static char *sSDKsample = "CUDA Test";
-
-typedef unsigned int uint;
-typedef unsigned char uchar;
-
-const char *image_filename = "peka.bmp";
 float2 transVec = { 0.0, 0.0 };
 
 unsigned int width, height;
@@ -41,21 +24,8 @@ void *dVBOBuf = NULL;
 
 GLuint texid;   // texture
 GLuint shader;
-
-#define GL_TEXTURE_TYPE GL_TEXTURE_2D
-
-#define REFRESH 10
-
-bool animate = false;
-
-int A = 0;
-int stepA = 10;
-
-void display();
-void timerEvent(int value);
-void keyboard(unsigned char key, int /*x*/, int /*y*/);
-void reshape(int x, int y);
-
+//
+cudaDeviceProp deviceProp;
 
 extern "C" void cdTexInit(int width, int height, void *pImage);
 extern "C" void cdTexFree();
@@ -70,217 +40,17 @@ extern "C" void LoadBMPFile(uchar4 **dst, unsigned int *width,
 
 extern "C" void fetchTheCommand();
 
-
-//bool animate = false;
-
 using namespace std;
 
-void applyTransformations()
-{
-	size_t num_bytes;
-	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-	rotate(dResult, width, height, A);
-	translate(dResult, width, height, transVec);
-	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-}
-
-bool isAngleCorrect(uint angle)
-{
-	return ((0 <= angle) && (angle <= 360)) ? true : false;
-}
-
-
-
-
-void timerEvent(int value)
-{
-	if (glutGetWindow())
-	{
-		glutPostRedisplay();
-		glutTimerFunc(REFRESH, timerEvent, 0);
-	}
-}
-
-void skipGarbageInput()
-{
-	fseek(stdin, 0, SEEK_END);
-}
-
-void keyboard(unsigned char key, int /*x*/, int /*y*/)
-{
-	switch (key)
-	{
-	case 27:
-	{
-		glutDestroyWindow(glutGetWindow());
-		return;
-		break;
-	}
-	case '`':
-	{
-		break;
-	}
-	case 'r':
-	{
-		//size_t num_bytes;
-		skipGarbageInput();
-		printf_s("Angle (deg): ");
-		scanf_s("%d", &A);
-		break;
-	}
-	case 'c':
-	{
-		printf_s("Restoring to default...\n");
-		A = 0;
-		transVec.x = 0.0f;
-		transVec.y = 0.0f;
-		g = 1.0f;
-		break;
-	}
-	case 'a':
-	{
-		char rotDirection = 0x00;
-		skipGarbageInput();
-		if (!animate)
-		{
-			printf_s("Rotate direction: (l)eft / (r)ight: ");
-			scanf_s("%c", &rotDirection);
-			printf_s("\n");
-			switch (rotDirection)
-			{
-			case 'r':
-			{
-				stepA = -(int)abs(stepA);
-				break;
-			}
-			case 'l':
-			{
-				stepA = (int)abs(stepA);
-				break;
-			}
-			default:
-			{
-				printf_s("Wrong symbol: %c.\n Direction set to default (left).\n", rotDirection);
-				stepA = (int)abs(stepA);
-				break;
-			}
-			}
-
-			animate = true;
-		}
-		else {
-			printf_s("Animation stopped\n");
-			animate = false;
-		}
-		break;
-	}
-	case 't':
-	{
-		skipGarbageInput();
-		printf_s("Translate vector: <x> <y>) (deg): ");
-		scanf_s("%f %f", &transVec.x, &transVec.y);
-		//checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-		//size_t num_bytes;
-		//checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-		////rotate(dResult, width, height, A);
-		//translate(dResult, width, height, transVec);
-		//checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-
-
-	case 'g':
-	{
-		g = (g == 1.0f) ? 2.0f : 1.0f;
-		printf("Gamma: %f\n", g);
-		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-		size_t num_bytes;
-		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-		gamma(dResult, width, height, g);
-		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-		break;
-	}
-	case 'v':
-	{
-
-		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-		size_t num_bytes;
-		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-		invert(dResult, width, height);
-		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-		break;
-	}
-
-	default:
-		break;
-	}
-	glutPostRedisplay();
-	}
-}
-
-void reshape(int x, int y)
-{
-	int pcside;
-	pcside = (width>height ? width : height) * 2;
-	glViewport(0, 0, x, y);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(-1.0, 1.0, -1.0, 1.0, 0.0, 1.0);
-}
-
-void display()
-{
-
-
-	unsigned int *dResult;
-
-	size_t num_bytes;
-
-	if (animate)
-	{
-		A = (A + 1) % 360;
-	}
-
-	//applyTransformations();
-	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-	rotate(dResult, width, height, A);
-	//translate(dResult, width, height, transVec);
-	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-
-	glClear(GL_COLOR_BUFFER_BIT);
-
-
-	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
-
-	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, shader);
-	glEnable(GL_FRAGMENT_PROGRAM_ARB);
-	glDisable(GL_DEPTH_TEST);
-
-	glBegin(GL_QUADS);
-	{
-		glTexCoord2f(0, 0);
-		glVertex2f(-0.5, -0.5);
-		glTexCoord2f(1, 0);
-		glVertex2f(0.5, -0.5);
-		glTexCoord2f(1, 1);
-		glVertex2f(0.5, 0.5);
-		glTexCoord2f(0, 1);
-		glVertex2f(-0.5, 0.5);
-	}
-	glEnd();
-	glBindTexture(GL_TEXTURE_TYPE, 0);
-	glDisable(GL_FRAGMENT_PROGRAM_ARB);
-
-	glutSwapBuffers();
-	glutReportErrors();
-
-}
-
+//void applyTransformations()
+//{
+//	size_t num_bytes;
+//	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+//	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+//	rotate(dResult, width, height, A);
+//	translate(dResult, width, height, transVec);
+//	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+//}
 
 void initCuda()
 {
@@ -303,65 +73,65 @@ void cleanup()
 	cudaDeviceReset();
 }
 
-static const char *shader_code =
-"!!ARBfp1.0\n"
-"TEX result.color, fragment.texcoord, texture[0], 2D; \n"
-"END";
+//static const char *shader_code =
+//"!!ARBfp1.0\n"
+//"TEX result.color, fragment.texcoord, texture[0], 2D; \n"
+//"END";
 
-GLuint compileASMShader(GLenum program_type, const char *code)
-{
-	GLuint program_id;
-	glGenProgramsARB(1, &program_id);
-	glBindProgramARB(program_type, program_id);
-	glProgramStringARB(program_type, GL_PROGRAM_FORMAT_ASCII_ARB, (GLsizei)strlen(code), (GLubyte *)code);
-
-	GLint error_pos;
-	glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &error_pos);
-
-	if (error_pos != -1)
-	{
-		const GLubyte *error_string;
-		error_string = glGetString(GL_PROGRAM_ERROR_STRING_ARB);
-		printf("Program error at position: %d\n%s\n", (int)error_pos, error_string);
-		return 0;
-	}
-
-	return program_id;
-}
-
-
-
-void initGLResources()
-{
-	// create pixel buffer object
-	glGenBuffersARB(1, &pbo);
-	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-	glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, width*height*sizeof(GLubyte) * 4, pImg, GL_STREAM_DRAW_ARB);
-	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
-	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_pbo_resource, pbo,
-		cudaGraphicsMapFlagsWriteDiscard));
-	glGenTextures(1, &texid);
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	shader = compileASMShader(GL_FRAGMENT_PROGRAM_ARB, shader_code);
-}
+//GLuint compileASMShader(GLenum program_type, const char *code)
+//{
+//	GLuint program_id;
+//	glGenProgramsARB(1, &program_id);
+//	glBindProgramARB(program_type, program_id);
+//	glProgramStringARB(program_type, GL_PROGRAM_FORMAT_ASCII_ARB, (GLsizei)strlen(code), (GLubyte *)code);
+//
+//	GLint error_pos;
+//	glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &error_pos);
+//
+//	if (error_pos != -1)
+//	{
+//		const GLubyte *error_string;
+//		error_string = glGetString(GL_PROGRAM_ERROR_STRING_ARB);
+//		printf("Program error at position: %d\n%s\n", (int)error_pos, error_string);
+//		return 0;
+//	}
+//
+//	return program_id;
+//}
 
 
-void initGL(int argc, char **argv)
-{
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
-	glutInitWindowSize(width, height);
-	glutCreateWindow(sSDKsample);
-	glutDisplayFunc(display);
-	glutKeyboardFunc(keyboard);
-	glutReshapeFunc(reshape);
-	glutTimerFunc(REFRESH, timerEvent, 0);
-	glewInit();
-}
+
+//void initGLResources()
+//{
+//	// create pixel buffer object
+//	glGenBuffersARB(1, &pbo);
+//	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
+//	glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, width*height*sizeof(GLubyte) * 4, pImg, GL_STREAM_DRAW_ARB);
+//	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+//	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_pbo_resource, pbo,
+//		cudaGraphicsMapFlagsWriteDiscard));
+//	glGenTextures(1, &texid);
+//	glBindTexture(GL_TEXTURE_2D, texid);
+//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//	glBindTexture(GL_TEXTURE_2D, 0);
+//	shader = compileASMShader(GL_FRAGMENT_PROGRAM_ARB, shader_code);
+//}
+
+
+//void initGL(int argc, char **argv)
+//{
+//	glutInit(&argc, argv);
+//	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+//	glutInitWindowSize(width, height);
+//	glutCreateWindow(sSDKsample);
+//	glutDisplayFunc(display);
+//	glutKeyboardFunc(keyboard);
+//	glutReshapeFunc(reshape);
+//	glutTimerFunc(REFRESH, timerEvent, 0);
+//	glewInit();
+//}
 
 
 void loadImageData(int argc, char **argv)
@@ -391,13 +161,21 @@ bool checkCUDAProfile(int dev, int min_runtime, int min_compute)
 {
 	int runtimeVersion = 0;
 
-	cudaDeviceProp deviceProp;
 	cudaGetDeviceProperties(&deviceProp, dev);
 
 	fprintf(stderr, "\nDevice %d: \"%s\"\n", dev, deviceProp.name);
 	cudaRuntimeGetVersion(&runtimeVersion);
-	fprintf(stderr, "  CUDA Runtime Version     :\t%d.%d\n", runtimeVersion / 1000, (runtimeVersion % 100) / 10);
-	fprintf(stderr, "  CUDA Compute Capability  :\t%d.%d\n", deviceProp.major, deviceProp.minor);
+	fprintf(stderr, "  CUDA Runtime Version              :\t%d.%d\n", runtimeVersion / 1000, (runtimeVersion % 100) / 10);
+	fprintf(stderr, "  CUDA Compute Capability           :\t%d.%d\n", deviceProp.major, deviceProp.minor);
+	fprintf(stderr, "  CUDA max 2D texture dimensions    :\t%d x %d\n", deviceProp.maxTexture2D[0], deviceProp.maxTexture2D[1]);
+	fprintf(stderr, "  CUDA maxThreadsDim                :\t%d x %d x %d\n", deviceProp.maxThreadsDim[0], deviceProp.maxThreadsDim[1], deviceProp.maxThreadsDim[2]);
+	fprintf(stderr, "  CUDA maxThreadsPerBlock           :\t%d\n", deviceProp.maxThreadsPerBlock);
+	fprintf(stderr, "  CUDA maxThreadsPerMultiProcessor  :\t%d\n", deviceProp.maxThreadsPerMultiProcessor);
+	fprintf(stderr, "  CUDA maxGridSize                  :\t%d x %d x %d\n", deviceProp.maxGridSize[0], deviceProp.maxGridSize[1], deviceProp.maxGridSize[2]);
+	printf("  (%2d) Multiprocessors, (%3d) CUDA Cores/MP:     %d CUDA Cores\n",
+		deviceProp.multiProcessorCount,
+		_ConvertSMVer2Cores(deviceProp.major, deviceProp.minor),
+		_ConvertSMVer2Cores(deviceProp.major, deviceProp.minor) * deviceProp.multiProcessorCount);
 
 	if (runtimeVersion >= min_runtime && ((deviceProp.major << 4) + deviceProp.minor) >= min_compute)
 	{
@@ -434,7 +212,6 @@ int findCapableDevice(int argc, char **argv)
 
 	for (dev = 0; dev < deviceCount; ++dev)
 	{
-		cudaDeviceProp deviceProp;
 		cudaGetDeviceProperties(&deviceProp, dev);
 
 		if (checkCUDAProfile(dev, MIN_RUNTIME_VERSION, MIN_COMPUTE_VERSION))
@@ -475,7 +252,6 @@ int main(int argc, char **argv)
 
 	initCuda();
 	initGLResources();
-	
 
 	glutCloseFunc(cleanup);
 	printf("command mode on '`'\n");
