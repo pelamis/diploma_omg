@@ -28,14 +28,14 @@ extern float g;
 
 extern cudaDeviceProp deviceProp;
 
-//OpenGL pixel buffer object
-extern GLuint pbo;
-extern struct cudaGraphicsResource *cuda_pbo_resource; // handles OpenGL-CUDA exchange
+////OpenGL pixel buffer object
+//extern GLuint pbo;
+//extern struct cudaGraphicsResource *cuda_pbo_resource; // handles OpenGL-CUDA exchange
+//
+////OpenGL vertex buffer object
+//extern GLuint vbo;
+//extern struct cudaGraphicsResource *cuda_vbo_resource;
 
-//OpenGL vertex buffer object
-extern GLuint vbo;
-extern struct cudaGraphicsResource *cuda_vbo_resource;
-extern void *dVBOBuf;
 
 extern GLuint texid;   // texture
 extern GLuint shader;

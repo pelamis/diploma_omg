@@ -1,11 +1,12 @@
 #include "callbacks.h"
+#include "opengl_cuda.h"
 
 bool animate = false;
 
 int A = 0;
 int stepA = 10;
-
-
+float g = 1.0;
+float2 transVec = { 0.0, 0.0 };
 
 void skipGarbageInput()
 {
