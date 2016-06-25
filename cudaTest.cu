@@ -97,9 +97,9 @@ void rotate(uint *dDest, int width, int height, int deg)
 
 	cudaChannelFormatDesc desc = beforeKernelExec(dDest, width, height);
 
-	dim3 gridSize(1, 1);
-	//dim3 gridSize((width + 16 - 1) / 16, (height + 16 - 1) / 16);
-	dim3 blockSize(32, 32);
+	//dim3 gridSize(1, 1);
+	dim3 gridSize((width) / 16, (height) / 16);
+	dim3 blockSize(16, 16);
 	rotKernel <<< gridSize, blockSize >>>(dDest, width, height, theta);
 
 	afterKernelExec(dDest, desc, width, height);
@@ -136,7 +136,7 @@ void invert(uint *dDest, int width, int height)
 
 	dim3 gridSize((width + 16 - 1) / 16, (height + 16 - 1) / 16);
 	dim3 blockSize(16, 16);
-	invertKernel << < gridSize, blockSize >> >(dDest, width, height);
+	invertKernel <<< gridSize, blockSize >>>(dDest, width, height);
 
 	afterKernelExec(dDest, desc, width, height);
 }

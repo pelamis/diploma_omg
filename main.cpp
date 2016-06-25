@@ -1,6 +1,7 @@
 // diploma_core.cpp: определяет точку входа для консольного приложения.
 //
 //test
+#include <Windows.h>
 #include "callbacks.h"
 #include "opengl_cuda.h"
 

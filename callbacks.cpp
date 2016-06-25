@@ -148,7 +148,7 @@ void display()
 {
 
 	unsigned int *dResult;
-
+	float *vertexes;
 	size_t num_bytes;
 
 	if (animate)
