@@ -19,6 +19,12 @@
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
+typedef struct Image {
+	unsigned int *data;
+	unsigned int *width;
+	unsigned int *height;
+}Image;
+
 extern float2 transVec;
 
 extern unsigned int width, height;
