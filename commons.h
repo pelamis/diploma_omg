@@ -10,6 +10,7 @@
 #include <helper_cuda.h>     
 #include <helper_cuda_gl.h>   
 #include <helper_functions.h>
+#include <list>
 
 #define MIN_RUNTIME_VERSION 1000
 #define MIN_COMPUTE_VERSION 0x10
@@ -19,14 +20,9 @@
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
-typedef struct Image {
-	unsigned int *data;
-	unsigned int *width;
-	unsigned int *height;
-}Image;
-
 extern float2 transVec;
 
+//extern std::list<Image> imageList;
 extern unsigned int width, height;
 extern unsigned int  *pImg;
 extern unsigned int *dResult;

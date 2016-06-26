@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include "callbacks.h"
 #include "opengl_cuda.h"
+#include "images.h"
 
 const char *image_filename = "test.bmp";
 unsigned int width, height;
@@ -21,7 +22,7 @@ void loadImageData(int argc, char **argv)
 {
 	// load image (needed so we can get the width and height before we create the window
 	char *image_path = NULL;
-
+	Image img;
 	image_path = sdkFindFilePath(image_filename, argv[0]);
 
 	if (image_path == NULL)
@@ -29,7 +30,8 @@ void loadImageData(int argc, char **argv)
 		fprintf(stderr, "Error finding image file '%s'\n", image_filename);
 		exit(EXIT_FAILURE);
 	}
-	
+	int res = loadSeries(&series);
+	res = loadBMP(&img, image_path);
 	LoadBMPFile((uchar4 **)&pImg, &width, &height, image_path);
 
 	if (pImg == NULL)
