@@ -52,4 +52,5 @@ extern std::list<Image> series;
 
 int loadBMP(Image *dest, const char *name);
 int loadSeries(std::list<Image> *inputSeries);
+void imgCleanup(std::list<Image> *inputSeries);
 #endif

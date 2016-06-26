@@ -14,10 +14,6 @@ unsigned int *dResult = NULL;
 extern "C" void cdTexInit(int width, int height, void *pImage);
 extern "C" void cdTexFree();
 
-// Rewrite this function!
-extern "C" void LoadBMPFile(uchar4 **dst, unsigned int *width,
-	unsigned int *height, const char *name);
-
 void loadImageData(int argc, char **argv)
 {
 	// load image (needed so we can get the width and height before we create the window
@@ -31,8 +27,11 @@ void loadImageData(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	int res = loadSeries(&series);
-	res = loadBMP(&img, image_path);
-	LoadBMPFile((uchar4 **)&pImg, &width, &height, image_path);
+	pImg = (unsigned int *)series.front().data;
+	width = series.front().width;
+	height = series.front().height;
+	//res = loadBMP(&img, image_path);
+	//LoadBMPFile((uchar4 **)&pImg, &width, &height, image_path);
 
 	if (pImg == NULL)
 	{
@@ -142,5 +141,6 @@ int main(int argc, char **argv)
 
 	glutMainLoop();
 
+	imgCleanup(&series);
 	scanf_s("\n");
 }
