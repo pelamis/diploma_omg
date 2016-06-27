@@ -6,21 +6,25 @@
 #include "opengl_cuda.h"
 #include "images.h"
 
-std::vector<Image> series;
-
 const char *image_filename = "test.bmp";
 unsigned int width, height;
 unsigned int  *pImg = NULL;
 unsigned int *dResult = NULL;
 
+std::vector<Image> series;
+
 extern "C" void cdTexInit(int width, int height, void *pImage);
 extern "C" void cdTexFree();
+
+// Rewrite this function!
+extern "C" void LoadBMPFile(uchar4 **dst, unsigned int *width,
+	unsigned int *height, const char *name);
 
 void loadImageData(int argc, char **argv)
 {
 	// load image (needed so we can get the width and height before we create the window
 	char *image_path = NULL;
-	Image img;
+
 	image_path = sdkFindFilePath(image_filename, argv[0]);
 
 	if (image_path == NULL)
@@ -28,12 +32,12 @@ void loadImageData(int argc, char **argv)
 		fprintf(stderr, "Error finding image file '%s'\n", image_filename);
 		exit(EXIT_FAILURE);
 	}
+	
 	int res = loadSeries(&series);
-	pImg = (unsigned int *)series.front().data;
-	width = series.front().infoHeader->width;
-	height = series.front().infoHeader->height;
-	writeBMP(&(series.front()));
-	//res = loadBMP(&img, image_path);
+	pImg = (unsigned int *)(series.front()).data;
+	width = (series.front()).infoHeader->width;
+	height = (series.front()).infoHeader->height;
+	
 	//LoadBMPFile((uchar4 **)&pImg, &width, &height, image_path);
 
 	if (pImg == NULL)
@@ -41,6 +45,8 @@ void loadImageData(int argc, char **argv)
 		fprintf(stderr, "Error opening file '%s'\n", image_path);
 		exit(EXIT_FAILURE);
 	}
+
+
 
 }
 
@@ -144,6 +150,5 @@ int main(int argc, char **argv)
 
 	glutMainLoop();
 
-	imgCleanup(&series);
 	scanf_s("\n");
 }

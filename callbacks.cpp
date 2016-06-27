@@ -3,7 +3,7 @@
 #include "images.h"
 
 bool animate = false;
-
+bool invertF = false;
 int A = 0;
 int stepA = 10;
 float g = 1.0;
@@ -56,10 +56,16 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case 'r':
 	{
-		//size_t num_bytes;
+		size_t num_bytes;
 		skipGarbageInput();
 		printf_s("Angle (deg): ");
 		scanf_s("%d", &A);
+		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+		//rotate2(dSrc, dResult, width, height, A);
+		rotate(dResult, width, height, A);
+		//translate(dResult, width, height, transVec);
+		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 		break;
 	}
 	case 'c':
@@ -132,9 +138,11 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 		break;
 	}
-	case 'v':
+	case 'i':
 	{
 
+		//invertF = (invertF) ? false : true;
+		//printf_s("invert: %d \n", invertF);
 		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
 		size_t num_bytes;
 		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
@@ -153,7 +161,7 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 void display()
 {
 	unsigned int *dSrc;
-	unsigned int *dResult;
+	//unsigned int *dResult;
 	float *vertexes;
 	size_t num_bytes;
 
@@ -163,12 +171,12 @@ void display()
 	//}
 
 	//applyTransformations();
-	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dSrc, &num_bytes, cuda_pbo_resource));
+	//checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+	//checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
 	//rotate2(dSrc, dResult, width, height, A);
-	rotate(dSrc, width, height, A);
+	//rotate(dResult, width, height, A);
 	//translate(dResult, width, height, transVec);
-	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+	//checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 
 	glClear(GL_COLOR_BUFFER_BIT);
 
