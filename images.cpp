@@ -17,7 +17,7 @@ int loadSeries(vector<Image> *inputSeries)
 {
 	HANDLE file = INVALID_HANDLE_VALUE;
 	Image curImg;
-	LARGE_INTEGER filesize;
+	//LARGE_INTEGER filesize;
 	WIN32_FIND_DATA fileFindData;
 	TCHAR szDir[MAX_PATH];
 	StringCchCopy(szDir, MAX_PATH, inputDir);
@@ -43,7 +43,7 @@ int loadSeries(vector<Image> *inputSeries)
 
 void imgCleanup(vector<Image> *inputSeries)
 {
-	Image curImg;
+	//Image curImg;
 	int i;
 
 	if (!(inputSeries->empty()))
@@ -64,13 +64,37 @@ int writeBMP(Image *src)
 {
 	HANDLE hOut;
 	FILE *of;
+	size_t padding;
+	int width = src->infoHeader->width;
+	int height = src->infoHeader->height;
+	int i, j;
+	unsigned int pix;
 	TCHAR path[MAX_PATH];
 	StringCchCopy(path, MAX_PATH, outputDir);
 	StringCchCat(path, MAX_PATH, TEXT("\\OUT"));
 	StringCchCat(path, MAX_PATH, src->name);
-	of = fopen(path, "wb");
-	fwrite(&src->header, sizeof(BMPHeader), 1, of);
-	fwrite(&src->infoHeader, sizeof(BMPInfoHeader), 1, of);
+	of = fopen(path, "w+b");
+	fwrite(src->header, sizeof(BMPHeader), 1, of);
+	fwrite(src->infoHeader, sizeof(BMPInfoHeader), 1, of);
+
+	padding = ((width * 3) % 4) ? 4 - (width * 3) % 4 : 0;
+	RGB pix3;
+
+	for (i = 0; i < height; i++)
+	{
+		for (j = 0; j < width; j++)
+		{
+			uchar4 pix4 = src->data[i * width + j];
+			pix3.z = pix4.z;
+			pix3.y = pix4.y;
+			pix3.x = pix4.x;
+			fwrite(&pix3, sizeof(RGB), 1, of);
+		}
+		pix3.x = 0, pix3.y = 0; pix3.z = 0;
+		if (padding != 0) {
+			fwrite(&pix3, padding, 1, of);
+		}
+	}
 	fclose(of);
 	//hOut = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
@@ -89,8 +113,8 @@ int loadBMP(Image *dest, const char *name)
 	BMPHeader *hdr = (BMPHeader *)malloc(sizeof(BMPHeader)); //dest->header;
 	BMPInfoHeader *infoHdr = (BMPInfoHeader *)malloc(sizeof(BMPInfoHeader)); //dest->infoHeader;
 	int width, height;
-	unsigned int row = 0; 
-	unsigned int col = 0;
+	int row = 0; 
+	int col = 0;
 	FILE *f = NULL;
 
 	printf_s("Loading %s...\n", name);
@@ -121,7 +145,7 @@ int loadBMP(Image *dest, const char *name)
 		printf_s("ERROR: compressed images are not supported\n");
 		return -1;
 	}
-	int nsize = strnlen_s(name, MAX_PATH - 10);
+	size_t nsize = strnlen_s(name, MAX_PATH - 10);
 	dest->name = (char *)malloc(nsize + 1);
 	strncpy_s(dest->name, nsize + 1, name, nsize);
 	dest->name[nsize] = 0;

@@ -12,10 +12,10 @@
 
 #pragma pack(1)
 
-//typedef struct
-//{
-//	unsigned char x, y, z, w;
-//} uchar4;
+typedef struct
+{
+	unsigned char x, y, z;
+} RGB;
 
 
 

@@ -100,8 +100,12 @@ void rotate(uint *dDest, int width, int height, int deg)
 	cudaChannelFormatDesc desc = beforeKernelExec(dDest, width, height);
 
 	//dim3 gridSize(1, 1);
-	dim3 gridSize((width) / 16, (height) / 16);
+
+	dim3 gridSize((width + 16 - 1) / 16, (height + 16 - 1) / 16);
 	dim3 blockSize(16, 16);
+
+	//dim3 gridSize((width) / 16, (height) / 16);
+	//dim3 blockSize(16, 16);
 	rotKernel <<< gridSize, blockSize >>>(dDest, width, height, theta);
 
 	afterKernelExec(dDest, desc, width, height);
@@ -154,7 +158,7 @@ void translate(uint *dDest, int width, int height, float2 transVec)
 }
 
 extern "C"
-void gamma(uint *dDest, int width, int height, float g)
+void gamma(uint *dDest, int width, int height, float g, bool inverted)
 {
 	StopWatchInterface *timer = NULL;
 	sdkCreateTimer(&timer);
@@ -165,7 +169,7 @@ void gamma(uint *dDest, int width, int height, float g)
 	dim3 gridSize((width + 16 - 1) / 16, (height + 16 - 1) / 16);
 	dim3 blockSize(16, 16);
 	gammaKernel<<< gridSize, blockSize >>>(dDest, width, height, g);
-
+	//if (inverted) invertKernel << < gridSize, blockSize >> >(dDest, width, height);
 	afterKernelExec(dDest, desc, width, height);
 
 	sdkStopTimer(&timer);
