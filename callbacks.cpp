@@ -4,7 +4,6 @@
 
 #define N 32
 
-#define
 bool animate = false;
 
 int A = 0;
