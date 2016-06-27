@@ -94,6 +94,8 @@ void rotate(uint *dDest, int width, int height, int deg)
 {
 	float theta = (float)M_PI * (float)deg / 180.0f;
 	//printf("Deg angle: %d\ncos: %f\nsin: %f", deg, cosf(theta), sinf(theta));
+	
+
 
 	cudaChannelFormatDesc desc = beforeKernelExec(dDest, width, height);
 
@@ -154,6 +156,10 @@ void translate(uint *dDest, int width, int height, float2 transVec)
 extern "C"
 void gamma(uint *dDest, int width, int height, float g)
 {
+	StopWatchInterface *timer = NULL;
+	sdkCreateTimer(&timer);
+	sdkStartTimer(&timer);
+
 	cudaChannelFormatDesc desc = beforeKernelExec(dDest, width, height);
 
 	dim3 gridSize((width + 16 - 1) / 16, (height + 16 - 1) / 16);
@@ -161,6 +167,10 @@ void gamma(uint *dDest, int width, int height, float g)
 	gammaKernel<<< gridSize, blockSize >>>(dDest, width, height, g);
 
 	afterKernelExec(dDest, desc, width, height);
+
+	sdkStopTimer(&timer);
+	printf_s("Gamma test: %f\n", sdkGetTimerValue(&timer));
+	sdkDeleteTimer(&timer);
 }
 
 extern "C"

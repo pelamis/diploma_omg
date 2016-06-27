@@ -2,6 +2,9 @@
 #include "opengl_cuda.h"
 #include "images.h"
 
+#define N 32
+
+#define
 bool animate = false;
 
 int A = 0;
@@ -56,10 +59,30 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	}
 	case 'r':
 	{
-		//size_t num_bytes;
+		size_t num_bytes;
 		skipGarbageInput();
 		printf_s("Angle (deg): ");
 		scanf_s("%d", &A);
+
+		StopWatchInterface *timer = NULL;
+		sdkCreateTimer(&timer);
+		
+
+		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
+
+		sdkStartTimer(&timer);
+		for (int i = 0; i < N; i++)
+		{
+			rotate(dResult, width, height, A + i);
+		}
+		
+
+		sdkStopTimer(&timer);
+		printf_s("Rotate test: %f\n", sdkGetTimerValue(&timer));
+		sdkDeleteTimer(&timer);
+		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+
 		break;
 	}
 	case 'c':
@@ -123,12 +146,23 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 
 	case 'g':
 	{
+		StopWatchInterface *timer = NULL;
+		sdkCreateTimer(&timer);
+
 		g = (g == 1.0f) ? 2.0f : 1.0f;
 		printf("Gamma: %f\n", g);
 		checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
 		size_t num_bytes;
 		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-		gamma(dResult, width, height, g);
+		for (int i = 0; i < N; i++)
+		{
+			gamma(dResult, width, height, g + i);
+		}
+		
+		sdkStopTimer(&timer);
+		printf_s("Gamma test: %f\n", sdkGetTimerValue(&timer));
+		sdkDeleteTimer(&timer);
+
 		checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 		break;
 	}
@@ -152,10 +186,10 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 
 void display()
 {
-	unsigned int *dSrc;
-	unsigned int *dResult;
+	//unsigned int *dSrc;
+	//unsigned int *dResult;
 	float *vertexes;
-	size_t num_bytes;
+	//size_t num_bytes;
 
 	//if (animate)
 	//{
@@ -163,12 +197,7 @@ void display()
 	//}
 
 	//applyTransformations();
-	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dSrc, &num_bytes, cuda_pbo_resource));
-	//rotate2(dSrc, dResult, width, height, A);
-	rotate(dSrc, width, height, A);
-	//translate(dResult, width, height, transVec);
-	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
+	
 
 	glClear(GL_COLOR_BUFFER_BIT);
 
