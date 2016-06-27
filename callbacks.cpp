@@ -1,5 +1,6 @@
 #include "callbacks.h"
 #include "opengl_cuda.h"
+#include "images.h"
 
 bool animate = false;
 
@@ -7,6 +8,11 @@ int A = 0;
 int stepA = 10;
 float g = 1.0;
 float2 transVec = { 0.0, 0.0 };
+
+void switchImage(std::vector<Image> *imgArray, int index)
+{
+
+}
 
 void skipGarbageInput()
 {
@@ -146,20 +152,21 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 
 void display()
 {
-
+	unsigned int *dSrc;
 	unsigned int *dResult;
 	float *vertexes;
 	size_t num_bytes;
 
-	if (animate)
-	{
-		A = (A + 1) % 360;
-	}
+	//if (animate)
+	//{
+	//	A = (A + 1) % 360;
+	//}
 
 	//applyTransformations();
 	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dResult, &num_bytes, cuda_pbo_resource));
-	rotate(dResult, width, height, A);
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dSrc, &num_bytes, cuda_pbo_resource));
+	//rotate2(dSrc, dResult, width, height, A);
+	rotate(dSrc, width, height, A);
 	//translate(dResult, width, height, transVec);
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
 

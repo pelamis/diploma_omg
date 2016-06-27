@@ -8,11 +8,12 @@
 
 #pragma pack(1)
 
-std::list<Image> series;
+//std::vector<Image> series;
 const char *inputDir = "input";
+const char *outputDir = "output";
 using namespace std;
 
-int loadSeries(list<Image> *inputSeries)
+int loadSeries(vector<Image> *inputSeries)
 {
 	HANDLE file = INVALID_HANDLE_VALUE;
 	Image curImg;
@@ -37,36 +38,62 @@ int loadSeries(list<Image> *inputSeries)
 	return 0;
 }
 
-void imgCleanup(list<Image> *inputSeries)
+
+
+
+void imgCleanup(vector<Image> *inputSeries)
 {
 	Image curImg;
 	int i;
+
 	if (!(inputSeries->empty()))
 	{
-		for (curImg = inputSeries->back(); inputSeries->size() > 1; curImg = inputSeries->back())
+		for (i = 0; i < inputSeries->size(); i++)
 		{
-			free(curImg.data);
-			inputSeries->pop_back();
+			free((*inputSeries)[i].name);
+			free((*inputSeries)[i].header);
+			free((*inputSeries)[i].infoHeader);
+			free((*inputSeries)[i].data);
 		}
-
-		curImg = inputSeries->back();
-		free(curImg.data);
 		inputSeries->clear();
 	}
 
 }
 
+int writeBMP(Image *src)
+{
+	HANDLE hOut;
+	FILE *of;
+	TCHAR path[MAX_PATH];
+	StringCchCopy(path, MAX_PATH, outputDir);
+	StringCchCat(path, MAX_PATH, TEXT("\\OUT"));
+	StringCchCat(path, MAX_PATH, src->name);
+	of = fopen(path, "wb");
+	fwrite(&src->header, sizeof(BMPHeader), 1, of);
+	fwrite(&src->infoHeader, sizeof(BMPInfoHeader), 1, of);
+	fclose(of);
+	//hOut = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	//if (hOut == INVALID_HANDLE_VALUE) {
+	//	printf("ERROR %x \n", GetLastError());
+	//	return -1;
+	//}
+
+	//CloseHandle(hOut);
+	return 0;
+}
+
+
 int loadBMP(Image *dest, const char *name)
 {
-	BMPHeader header;
-	BMPInfoHeader infoHeader;
+	BMPHeader *hdr = (BMPHeader *)malloc(sizeof(BMPHeader)); //dest->header;
+	BMPInfoHeader *infoHdr = (BMPInfoHeader *)malloc(sizeof(BMPInfoHeader)); //dest->infoHeader;
+	int width, height;
 	unsigned int row = 0; 
 	unsigned int col = 0;
 	FILE *f = NULL;
 
 	printf_s("Loading %s...\n", name);
-
-	//f = fopen(name, "rb");
 
 	if (!(f = fopen(name, "rb")))
 	{
@@ -74,46 +101,51 @@ int loadBMP(Image *dest, const char *name)
 		return -1;
 	}
 
-	fread(&header, sizeof(header), 1, f);
+	fread(hdr, sizeof(BMPHeader), 1, f);
 
-	if (header.bfType != 0x4d42) {
+	if (hdr->bfType != 0x4d42) {
 		printf_s("ERROR: bad file signature\n");
 		return -1;
 	}
 
-	fread(&infoHeader, sizeof(infoHeader), 1, f);
+	fread(infoHdr, sizeof(BMPInfoHeader), 1, f);
 
-	if (infoHeader.bitCount != 24)
+	if (infoHdr->bitCount != 24)
 	{
 		printf_s("ERROR: %hd-bit color depth is not supported (only 24-bit)\n");
 		return -1;
 	}
 
-	if (infoHeader.compression != 0)
+	if (infoHdr->compression != 0)
 	{
 		printf_s("ERROR: compressed images are not supported\n");
 		return -1;
 	}
-	
-	dest -> height = infoHeader.height;
-	dest -> width = infoHeader.width;
-	dest->data = (uchar4*)malloc(4 * infoHeader.width * infoHeader.height);
+	int nsize = strnlen_s(name, MAX_PATH - 10);
+	dest->name = (char *)malloc(nsize + 1);
+	strncpy_s(dest->name, nsize + 1, name, nsize);
+	dest->name[nsize] = 0;
+	width = infoHdr->width;
+	height = infoHdr->height;
+	dest->header = hdr;
+	dest->infoHeader = infoHdr;
+	dest->data = (uchar4*)malloc(4 * infoHdr->width * infoHdr->height);
 
-	fseek(f, header.bfOffBits - sizeof(header) - sizeof(infoHeader), SEEK_CUR);
+	fseek(f, hdr->bfOffBits - sizeof(BMPHeader) - sizeof(BMPInfoHeader), SEEK_CUR);
 
-	for (row = 0; row < dest->height; row++)
+	for (row = 0; row < height; row++)
 	{
-		for (col = 0; col < dest->width; col++)
+		for (col = 0; col < width; col++)
 		{
-			dest->data[row * dest->width + col].w = 0;
-			dest->data[row * dest->width + col].z = fgetc(f);
-			dest->data[row * dest->width + col].y = fgetc(f);
-			dest->data[row * dest->width + col].x = fgetc(f);
+			dest->data[row * width + col].w = 0;
+			dest->data[row * width + col].z = fgetc(f);
+			dest->data[row * width + col].y = fgetc(f);
+			dest->data[row * width + col].x = fgetc(f);
 
 		}
 
 		//alignment skip
-		for (col = 0; col < (unsigned int)(4 - (3 * infoHeader.width) % 4) % 4; col++) fgetc(f);
+		for (col = 0; col < (unsigned int)(4 - (3 * infoHdr->width) % 4) % 4; col++) fgetc(f);
 	}
 
 	if (ferror(f))

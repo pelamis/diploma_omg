@@ -10,7 +10,7 @@
 #include <helper_cuda.h>     
 #include <helper_cuda_gl.h>   
 #include <helper_functions.h>
-#include <list>
+#include <vector>
 
 #define MIN_RUNTIME_VERSION 1000
 #define MIN_COMPUTE_VERSION 0x10
@@ -22,7 +22,7 @@ typedef unsigned char uchar;
 
 extern float2 transVec;
 
-//extern std::list<Image> imageList;
+//extern std::vector<Image> series;
 extern unsigned int width, height;
 extern unsigned int  *pImg;
 extern unsigned int *dResult;

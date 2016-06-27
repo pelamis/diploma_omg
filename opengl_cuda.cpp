@@ -59,11 +59,11 @@ void vboDelete(GLuint *vbo, cudaGraphicsResource *vboRes)
 	*vbo = 0;
 }
 
-void pboCreate(GLuint *pbo, cudaGraphicsResource **pboRes, uint pboResFlags)
+void pboCreate(GLuint *pbo, cudaGraphicsResource **pboRes, uint *img, uint pboResFlags)
 {
 	glGenBuffersARB(1, pbo);
 	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, *pbo);
-	glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, width*height*sizeof(GLubyte) * 4, pImg, GL_STREAM_DRAW_ARB);
+	glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, width*height*sizeof(GLubyte) * 4, img, GL_STREAM_DRAW_ARB);
 	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(pboRes, *pbo,
 		pboResFlags));
@@ -79,11 +79,11 @@ void pboDelete(GLuint *pbo, cudaGraphicsResource *pboRes)
 void initGLResources()
 {
 	// create pixel and vertex buffer objects
-	pboCreate(&pbo, &cuda_pbo_resource, cudaGraphicsMapFlagsWriteDiscard);
+	pboCreate(&pbo, &cuda_pbo_resource, pImg, cudaGraphicsMapFlagsWriteDiscard);
 	vboCreate(&vbo, &cuda_vbo_resource, cudaGraphicsMapFlagsWriteDiscard);
 	glGenTextures(1, &texid);
 	glBindTexture(GL_TEXTURE_2D, texid);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pImg);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -111,10 +111,10 @@ void initCuda()
 
 void cleanup()
 {
-	if (pImg) {
-		free(pImg);
-		pImg = NULL;
-	}
+	//if (pImg) {
+	//	free(pImg);
+	//	pImg = NULL;
+	//}
 
 	if (vbo) vboDelete(&vbo, cuda_vbo_resource);
 	cdTexFree();

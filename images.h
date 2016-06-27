@@ -17,10 +17,7 @@
 //	unsigned char x, y, z, w;
 //} uchar4;
 
-typedef struct Image {
-	unsigned int width, height;
-	uchar4 *data;
-}Image;
+
 
 typedef struct
 {
@@ -46,11 +43,18 @@ typedef struct
 	int clrImportant;
 } BMPInfoHeader;
 
+typedef struct Image {
+	char *name;
+	BMPHeader *header;
+	BMPInfoHeader *infoHeader;
+	//unsigned int width, height;
+	uchar4 *data;
+}Image;
 
-
-extern std::list<Image> series;
+extern std::vector<Image> series;
 
 int loadBMP(Image *dest, const char *name);
-int loadSeries(std::list<Image> *inputSeries);
-void imgCleanup(std::list<Image> *inputSeries);
+int writeBMP(Image *src);
+int loadSeries(std::vector<Image> *inputSeries);
+void imgCleanup(std::vector<Image> *inputSeries);
 #endif

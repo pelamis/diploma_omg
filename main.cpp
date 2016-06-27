@@ -6,6 +6,8 @@
 #include "opengl_cuda.h"
 #include "images.h"
 
+std::vector<Image> series;
+
 const char *image_filename = "test.bmp";
 unsigned int width, height;
 unsigned int  *pImg = NULL;
@@ -28,8 +30,9 @@ void loadImageData(int argc, char **argv)
 	}
 	int res = loadSeries(&series);
 	pImg = (unsigned int *)series.front().data;
-	width = series.front().width;
-	height = series.front().height;
+	width = series.front().infoHeader->width;
+	height = series.front().infoHeader->height;
+	writeBMP(&(series.front()));
 	//res = loadBMP(&img, image_path);
 	//LoadBMPFile((uchar4 **)&pImg, &width, &height, image_path);
 

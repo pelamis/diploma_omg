@@ -106,6 +106,40 @@ void rotate(uint *dDest, int width, int height, int deg)
 }
 
 extern "C"
+float rotate2(uint *src, uint *out, uint width, uint height, int deg)
+{
+	StopWatchInterface *timer = NULL;
+	float theta = (float)M_PI * (float)deg / 180.0f;
+	float execTime;
+	uint *dDest = NULL;
+	size_t size = width * height * sizeof(unsigned int);
+	checkCudaErrors(cudaMalloc((void **)&dDest, size));
+	cudaChannelFormatDesc desc = cudaCreateChannelDesc<uchar4>();
+	cudaArray *tempArray;
+	checkCudaErrors(cudaMallocArray(&tempArray, &desc, width, height));
+	checkCudaErrors(cudaMemcpyToArray(tempArray, 0, 0, src, size, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaBindTextureToArray(rgbaTex, tempArray, desc));
+
+	dim3 dimBlock(8, 8, 1);
+	dim3 dimGrid(width / dimBlock.x, height / dimBlock.y, 1);
+
+	sdkCreateTimer(&timer);
+	sdkStartTimer(&timer);
+
+	rotKernel <<< dimGrid, dimBlock, 0 >>>(dDest, width, height, theta);
+
+	sdkStopTimer(&timer);
+	execTime = sdkGetTimerValue(&timer);
+	sdkDeleteTimer(&timer);
+	getLastCudaError("Kernel exec failed");
+	checkCudaErrors(cudaDeviceSynchronize());
+	if (out != NULL) free(out);
+	out = (uint *)malloc(size);
+	checkCudaErrors(cudaMemcpy(out, tempArray, size, cudaMemcpyDeviceToHost));
+	return execTime;
+}
+
+extern "C"
 void translate(uint *dDest, int width, int height, float2 transVec)
 {
 	cudaChannelFormatDesc desc = beforeKernelExec(dDest, width, height);
